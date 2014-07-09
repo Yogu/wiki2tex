@@ -1,0 +1,32 @@
+
+  "name": "wiki2tex",
+  "version": "0.1.0",
+  "description": "Combine pages of a markdown wiki to a latex file",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Yogu/wiki2tex.git"
+  },
+  "keywords": [
+    "markdown",
+    "wiki",
+    "pdf"
+  ],
+  "author": "Jan Melcher <info@yogularm.de>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Yogu/wiki2tex/issues"
+  },
+  "homepage": "https://github.com/Yogu/wiki2tex",
+  "dependencies": {
+    "cli": "^0.6.3",
+    "download": "^0.1.18",
+    "exec-sync": "^0.1.6",
+    "q": "^1.0.1",
+    "q-io": "^1.11.2",
+    "tmp": "0.0.23"
+  }
+}
