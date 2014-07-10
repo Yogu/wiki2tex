@@ -1,4 +1,4 @@
-
+{
   "name": "wiki2tex",
   "version": "0.1.0",
   "description": "Combine pages of a markdown wiki to a latex file",
