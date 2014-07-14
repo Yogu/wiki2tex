@@ -9,7 +9,8 @@ var execSync = require('exec-sync');
 var HEADER = 
 
 cli.parse({
-    output:   ['o', 'Path to save the tex file to', 'path', 'wiki.tex'],
+    input: ['i', 'Path to json file with template and pages properties', 'path' ],
+    output:   ['o', 'Path to save the pdf file to', 'path', 'wiki.pdf'],
 });
 
 cli.main(function(args, options) {
@@ -62,23 +63,30 @@ cli.main(function(args, options) {
 					tryAdd(target, fileName);
 			}
 		}
-		
-		args.forEach(function(fileName) {
-			tryAdd(fileName, 'command-line argument');
+
+		var config = require(options.input);
+		var rootPath = path.dirname(options.input);
+		config.pages.forEach(function(fileName) {
+			tryAdd(path.resolve(rootPath, fileName), 'root');
 		});
 
 		var mdPath = tmpDir + '/document.md';
 		var latexPath = tmpDir + '/document.tex';
+		var pdfPath = tmpDir + '/document.pdf';
 		fs.writeFileSync(mdPath, document);
 		
 		// markdown-yaml_metadata_block disables yaml parsing (mistakes horizontal lines for yaml section separators)
 		execSync('pandoc -f markdown-yaml_metadata_block -t latex -o ' + escapeshell(latexPath) + ' ' + escapeshell(mdPath));
 		
 		var latexBody = fs.readFileSync(latexPath);
-		var template = fs.readFileSync(__dirname + '/resources/template.tex');
+		var template = fs.readFileSync(path.resolve(rootPath, config.template));
 		var latex = (template + '').replace(/\$body/, latexBody);
 		
-		fs.writeFileSync(options.output, latex);
+		fs.writeFileSync(latexPath, latex);
+                console.log('tex file created at ' + latexPath);
+		execSync('pdflatex -output-format pdf -output-directory ' + escapeshell(tmpDir) + ' ' + escapeshell(latexPath));
+		fs.writeFileSync(options.output, fs.readFileSync(pdfPath));
+		console.log('pdf file created at ' + options.output);
 	});
 });
 
