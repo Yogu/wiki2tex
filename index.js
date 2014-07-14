@@ -72,7 +72,7 @@ cli.main(function(args, options) {
 
 		var mdPath = tmpDir + '/document.md';
 		var latexPath = tmpDir + '/document.tex';
-		var pdfPath = tmpDir + '/document.pdf';
+		var docPath = path.basename(options.output, '.pdf');
 		fs.writeFileSync(mdPath, document);
 		
 		// markdown-yaml_metadata_block disables yaml parsing (mistakes horizontal lines for yaml section separators)
@@ -80,12 +80,15 @@ cli.main(function(args, options) {
 		
 		var latexBody = fs.readFileSync(latexPath);
 		var template = fs.readFileSync(path.resolve(rootPath, config.template));
+		// resolve relative paths correctly
+		template = '% rubber: path ' + tmpDir + '\n' + template;
 		var latex = (template + '').replace(/\$body/, latexBody);
 		
-		fs.writeFileSync(latexPath, latex);
-                console.log('tex file created at ' + latexPath);
-		execSync('pdflatex -output-format pdf -output-directory ' + escapeshell(tmpDir) + ' ' + escapeshell(latexPath));
-		fs.writeFileSync(options.output, fs.readFileSync(pdfPath));
+		fs.writeFileSync(docPath + '.tex', latex);
+                console.log('tex file created at ' + docPath + '.tex');
+		var result = execSync('rubber --pdf ' + escapeshell(docPath), true /* do not throw on error */);
+		console.log(result.stdout);
+		console.log(result.stderr);
 		console.log('pdf file created at ' + options.output);
 	});
 });

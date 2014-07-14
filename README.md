@@ -5,7 +5,7 @@ This is a little tool to convert a Gitlab/GitHub-style wiki into one pdf file
 
 It starts at one or more files, crawls their links and puts it all into one markdown file.
 Then it uses pandoc to convert it to latex, embeds it in a template (just header and footer),
-and finally runs pdflatex to create the pdf.
+and finally runs rubber to create the pdf.
 
 ### Configuration File
 
@@ -22,7 +22,7 @@ The paths are relative to the config file's directory. `template.tex` should be 
 
 * node v0.10+
 * pandoc
-* pdflatex
+* rubber
 
 ### Usage
 
