@@ -42,10 +42,8 @@ cli.main(function(args, options) {
 		}
 		
 		function traverse(fileName) {
-			var contents = fs.readFileSync(fileName);
-			
-			// [\s\S] matches all chars, including linebreaks
-			var filteredContents = (contents + '').replace(/<!--\s*BEGIN_NOT_IN_PDF\s*-->[\s\S]+?<!--\s*END_NOT_IN_PDF\s*-->/g, '');
+			var contents = fs.readFileSync(fileName) + '';
+			filteredContents = processMarkdown(contents);
 			
 			document += filteredContents + '\n\n';
 	
@@ -63,6 +61,16 @@ cli.main(function(args, options) {
 					tryAdd(target, fileName);
 			}
 		}
+		
+		function processMarkdown(text) {
+			// [\s\S] matches all chars, including linebreaks
+			return text.replace(/<!--\s*BEGIN_NOT_IN_PDF\s*-->[\s\S]+?<!--\s*END_NOT_IN_PDF\s*-->/g, '');
+		}
+		
+		function processLatex(text) {
+			// really place images where they are
+			return text.replace(/\\begin\{figure\}\[\w+\]/g, '\\begin{figure}[H]');
+		}
 
 		var config = require(options.input);
 		var rootPath = path.dirname(options.input);
@@ -78,7 +86,8 @@ cli.main(function(args, options) {
 		// markdown-yaml_metadata_block disables yaml parsing (mistakes horizontal lines for yaml section separators)
 		execSync('pandoc -f markdown-yaml_metadata_block -t latex -o ' + escapeshell(latexPath) + ' ' + escapeshell(mdPath));
 		
-		var latexBody = fs.readFileSync(latexPath);
+		var latexBody = fs.readFileSync(latexPath) + '';
+		latexBody = processLatex(latexBody);
 		var template = fs.readFileSync(path.resolve(rootPath, config.template));
 		// resolve relative paths correctly
 		template = '% rubber: path ' + tmpDir + '\n' + template;
