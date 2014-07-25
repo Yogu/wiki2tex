@@ -12,7 +12,7 @@ and finally runs rubber to create the pdf.
 You need to create a json file for a tex configuration:
 
     {
-        "pages": [ "pagename1", "pagename"],
+        "pages": [ "pagename1.markdown", "pagename2.txt"],
         "template": "template.tex"
     }
 
@@ -27,4 +27,4 @@ The paths are relative to the config file's directory. `template.tex` should be 
 ### Usage
 
     npm install
-    ./index.js --input path/to/wiki/spec.json --output path/to/output.pdf
+    ./index.js path/to/wiki/spec.json

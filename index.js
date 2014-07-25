@@ -1,107 +1,28 @@
-var cli = require('cli').enable('version');
-var fs = require('fs');
-var path = require('path');
-var markdownpdf = require("markdown-pdf");
-var tmp = require('tmp');
-var download = require('download');
-var execSync = require('exec-sync');
+var Q = require('q');
+var fs = require('q-io/fs');
+var Config = require('./config.js');
+var Page = require('./page.js');
+var latex2pdf = require('./latex2pdf.js');
 
-var HEADER = 
+Q.longStackSupport = true;
 
-cli.parse({
-    input: ['i', 'Path to json file with template and pages properties', 'path' ],
-    output:   ['o', 'Path to save the pdf file to', 'path', 'wiki.pdf'],
+var wikiToPDF = Q.async(function*(configFile) {
+	var config = yield Config.load(configFile);
+	
+	var pages = yield Page.findPages(config.pages.map(function(path) { 
+		return fs.resolve(configFile, path);
+	}));
+	
+	var latexBody = yield Page.concatenateLatex(pages);
+	var latex = config.template.replace(/\$body/, latexBody);
+	yield latex2pdf(latex, fs.directory(configFile));
+	console.log('Created ' + fs.resolve(configFile, 'wiki.pdf'));
 });
 
-cli.main(function(args, options) {
-	var includedFiles = [];
-	var document = '';
+Q.spawn(function*() {
+	if (process.argv.length < 3)
+		throw new Error('Please specify the path to the json config file as argument');
+	var configPath = process.argv[2]; // 0 is node, 1 is script path
 	
-	tmp.dir(function(err, tmpDir) {
-		function tryAdd(target, source) {
-			var extensions = ['', '.md', '.markdown', '.txt'];
-			
-			var fileName = null;
-			var found = false;
-			for (var i = 0; i < extensions.length; i++) {
-				var extension = extensions[i];
-				fileName = target + extension;
-	
-				if (fs.existsSync(fileName)) {
-					found = true;
-					break;
-				}
-			}
-			
-			if (!found)
-				console.log(target + ' does not exist (referenced by ' + source + ')');
-			else if (includedFiles.indexOf(fileName) < 0) {
-				includedFiles.push(fileName);
-				traverse(fileName);
-			}
-		}
-		
-		function traverse(fileName) {
-			var contents = fs.readFileSync(fileName) + '';
-			filteredContents = processMarkdown(contents);
-			
-			document += filteredContents + '\n\n';
-	
-			// Follow the links
-			var regexp = new RegExp(/(!?)\[.+?\]\((.+?)\)/g);
-			while (match = regexp.exec(contents)) {
-				var isImage = match[1] == '!';
-				var target = match[2];
-				target = target.replace(/#.*/g, ''); // ignore anchor
-				
-				if (target != '' && target.indexOf(':') < 0)
-					target = path.resolve(path.dirname(fileName), target);
-				
-				if (target && !isImage)
-					tryAdd(target, fileName);
-			}
-		}
-		
-		function processMarkdown(text) {
-			// [\s\S] matches all chars, including linebreaks
-			return text.replace(/<!--\s*BEGIN_NOT_IN_PDF\s*-->[\s\S]+?<!--\s*END_NOT_IN_PDF\s*-->/g, '');
-		}
-		
-		function processLatex(text) {
-			// really place images where they are
-			return text.replace(/\\begin\{figure\}\[\w+\]/g, '\\begin{figure}[H]');
-		}
-
-		var config = require(options.input);
-		var rootPath = path.dirname(options.input);
-		config.pages.forEach(function(fileName) {
-			tryAdd(path.resolve(rootPath, fileName), 'root');
-		});
-
-		var mdPath = tmpDir + '/document.md';
-		var latexPath = tmpDir + '/document.tex';
-		var docPath = path.basename(options.output, '.pdf');
-		fs.writeFileSync(mdPath, document);
-		
-		// markdown-yaml_metadata_block disables yaml parsing (mistakes horizontal lines for yaml section separators)
-		execSync('pandoc -f markdown-yaml_metadata_block -t latex -o ' + escapeshell(latexPath) + ' ' + escapeshell(mdPath));
-		
-		var latexBody = fs.readFileSync(latexPath) + '';
-		latexBody = processLatex(latexBody);
-		var template = fs.readFileSync(path.resolve(rootPath, config.template));
-		// resolve relative paths correctly
-		template = '% rubber: path ' + tmpDir + '\n' + template;
-		var latex = (template + '').replace(/\$body/, latexBody);
-		
-		fs.writeFileSync(docPath + '.tex', latex);
-                console.log('tex file created at ' + docPath + '.tex');
-		var result = execSync('rubber --pdf ' + escapeshell(docPath), true /* do not throw on error */);
-		console.log(result.stdout);
-		console.log(result.stderr);
-		console.log('pdf file created at ' + options.output);
-	});
+	yield wikiToPDF(configPath);
 });
-
-function escapeshell(cmd) {
-	return '"'+cmd.replace(/(["\s'$`\\])/g,'\\$1')+'"';
-};
