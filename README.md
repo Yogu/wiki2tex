@@ -20,11 +20,11 @@ The paths are relative to the config file's directory. `template.tex` should be 
 
 ### Dependencies:
 
-* node v0.10+
+* node v0.11+
 * pandoc
 * rubber
 
 ### Usage
 
     npm install
-    ./index.js path/to/wiki/spec.json
+    node --harmony_generators ./index.js path/to/wiki/spec.json
