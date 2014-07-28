@@ -3,6 +3,7 @@ var fs = require('q-io/fs');
 var pandoc = Q.denodeify(require('pdc'));
 var Set = require('collections/set');
 var Dict = require('collections/dict');
+var svg2pdf = require('./svg2pdf');
 
 function Page(fileName) {
 	this.fileName = fileName;
@@ -98,7 +99,9 @@ Page.prototype.getRawLatex = Q.async(function*() {
 Page.prototype.getFinalLatex = Q.async(function*() {
 	var raw = yield this.getRawLatex();
 	var prefix = '\\label{' + this.getPageName() + '}\n\n';
-	return prefix + Page.postprocessLatex(raw);
+	var latex = prefix + Page.postprocessLatex(raw);
+	latex = yield svg2pdf(latex);
+	return latex;
 });
 
 /**
