@@ -27,7 +27,8 @@ var convertSVG = Q.async(function*(latex) {
 	for (var i = 0; i < svgFiles.length; i++) {
 		var fileName = svgFiles[i];
 		var pdfFileName = fs.join(tmpDir, fileName.replace(/\W/g, '_') + '.pdf');
-		yield exec('inkscape -z -D --file=' + escapeshell(fileName + '.svg') + ' --export-pdf=' + 
+		console.log('Converting ' + fileName + '.svg to pdf...');
+		yield exec('inkscape2 -z -D --file=' + escapeshell(fileName + '.svg') + ' --export-pdf=' + 
 				escapeshell(pdfFileName));
 		latex = latex.replace(
 				'\\includegraphics{' + fileName + '.svg}',
@@ -41,7 +42,8 @@ module.exports = Q.async(function*(latex, directory) {
 	var basePath = fs.join(directory, 'wiki');
 	
 	latex = yield convertSVG(latex);
-	
+
+	console.log('Converting latex to pdf...');
 	yield fs.write(basePath + '.tex', latex);
 	yield exec("rubber --pdf " + escapeshell(basePath));
 });

@@ -88,6 +88,7 @@ Page.prototype.getProcessedMarkdown = Q.async(function*() {
  */
 Page.prototype.getRawLatex = Q.async(function*() {
 	var md = yield this.getProcessedMarkdown();
+	console.log('Converting ' + this.fileName + ' to latex...');
 	return yield pandoc(md, 'markdown-yaml_metadata_block', 'latex');
 });
 
