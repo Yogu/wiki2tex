@@ -22,6 +22,9 @@ Page.postprocessLatex = function(text) {
 	// fix image positions
 	text = text.replace(/\\begin\{figure\}\[\w+\]/g, '\\begin{figure}[H]');
 	
+	// make images max. 100% width/height
+	text = text.replace(/\\includegraphics/g, '\\includegraphics[max width=\\linewidth,max totalheight=\\textheight]');
+	
 	return text;
 };
 
@@ -97,10 +100,11 @@ Page.prototype.getRawLatex = Q.async(function*() {
  * Gets a promise for the latex that should be included in the final latex document 
  */
 Page.prototype.getFinalLatex = Q.async(function*() {
-	var raw = yield this.getRawLatex();
+	var latex = yield this.getRawLatex();
 	var prefix = '\\label{' + this.getPageName() + '}\n\n';
-	var latex = prefix + Page.postprocessLatex(raw);
+	latex = prefix + latex;
 	latex = yield svg2pdf(latex);
+	latex = Page.postprocessLatex(latex);
 	return latex;
 });
 
