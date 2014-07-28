@@ -23,6 +23,7 @@ The paths are relative to the config file's directory. `template.tex` should be 
 * node v0.11+
 * pandoc
 * rubber
+* inkscape (only if you include svg graphics)
 
 ### Usage
 
