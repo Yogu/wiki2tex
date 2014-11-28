@@ -16,27 +16,28 @@ function getSVGReferences(latex) {
 	return files.toArray();
 }
 
-module.exports = Q.async(function*(latex) {
+module.exports = Q.async(function*(latex, baseDir) {
 	var svgFiles = getSVGReferences(latex);
 	if (!svgFiles.length)
 		return latex;
-	
+
 	var tmpDir = yield createTmpDir();
-	
+
 	for (var i = 0; i < svgFiles.length; i++) {
 		var fileName = svgFiles[i];
+		var resolvedFileName = fs.join(baseDir, fileName);
 		var pdfFileName = fs.join(tmpDir, fileName.replace(/\W/g, '_') + '.pdf');
 		if (yield fs.exists(pdfFileName))
 			continue;
-		
-		console.log('Converting ' + fileName + '.svg to pdf...');
-		yield exec('inkscape -z -D --file=' + escapeshell(fileName + '.svg') + ' --export-pdf=' + 
-				escapeshell(pdfFileName));
+
+		console.log('Converting ' + resolvedFileName + '.svg to pdf...');
+		yield exec('inkscape -z -D --file=' + escapeshell(resolvedFileName + '.svg')
+			+ ' --export-pdf=' + escapeshell(pdfFileName));
 		latex = latex.replace(
 				'\\includegraphics{' + fileName + '.svg}',
 				'\\includegraphics{' + pdfFileName + '}');
 	}
-	
+
 	return latex;
 });
 

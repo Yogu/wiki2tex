@@ -4,6 +4,7 @@ var pandoc = Q.denodeify(require('pdc'));
 var Set = require('collections/set');
 var Dict = require('collections/dict');
 var svg2pdf = require('./svg2pdf');
+var path = require('path');
 
 function Page(fileName) {
 	this.fileName = fileName;
@@ -18,25 +19,25 @@ Page.postprocessLatex = function(text) {
 	// fix links; anchors not yet supported
 	text = text.replace(/\\href{([^\\#}]*)(\\#[^}]+?)?}/g, '\\hyperref[$1]');
 	text = text.replace(/\\url{([^}]+?)}/g, '\\hyperref[$1]{$1}');
-	
+
 	// fix image positions
 	text = text.replace(/\\begin\{figure\}\[\w+\]/g, '\\begin{figure}[H]');
-	
+
 	// make images max. 100% width/height
 	text = text.replace(/\\includegraphics/g, '\\includegraphics[max width=\\linewidth,max totalheight=\\textheight]');
-	
+
 	return text;
 };
 
 Page.findPages = Q.async(function*(fileNames, pages) {
 	if (!pages)
 		pages = new Dict();
-	
+
 	for (var i = 0; i < fileNames.length; i++) {
 		var fileName = fileNames[i];
 		if (pages.has(fileName))
 			break;
-		
+
 		var page = new Page(fileName);
 		pages.add(page, fileName);
 		var outgoingLinks = yield page.getOutgoingLinks();
@@ -67,14 +68,14 @@ Page.getRealFileName = Q.async(function*(target, base) {
 		if (yield fs.isFile(fileName))
 			return fileName;
 	}
-	
+
 	return false;
 });
 
 Page.prototype.getRawMarkdown = Q.async(function*() {
 	if (this.rawMarkdown)
 		return this.rawMarkdown;
-	
+
 	this.rawMarkdown = fs.read(this.fileName);
 	return this.rawMarkdown;
 });
@@ -97,13 +98,13 @@ Page.prototype.getRawLatex = Q.async(function*() {
 });
 
 /**
- * Gets a promise for the latex that should be included in the final latex document 
+ * Gets a promise for the latex that should be included in the final latex document
  */
 Page.prototype.getFinalLatex = Q.async(function*() {
 	var latex = yield this.getRawLatex();
 	var prefix = '\\label{' + this.getPageName() + '}\n\n';
 	latex = prefix + latex;
-	latex = yield svg2pdf(latex);
+	latex = yield svg2pdf(latex, path.dirname(this.fileName));
 	latex = Page.postprocessLatex(latex);
 	return latex;
 });
@@ -115,7 +116,7 @@ Page.prototype.getOutgoingLinks = Q.async(function*() {
 	var raw = yield this.getRawMarkdown();
 
 	var links = new Set();
-	
+
 	var regexp = new RegExp(/(!?)\[.+?\]\((.+?)\)/g);
 	while (match = regexp.exec(raw)) {
 		var isImage = match[1] == '!';
@@ -123,16 +124,16 @@ Page.prototype.getOutgoingLinks = Q.async(function*() {
 			break;
 		var target = match[2];
 		target = target.replace(/#.*/g, ''); // ignore anchor
-		
+
 		if (target != '' && target.indexOf(':') < 0)
 			target = target;
 		if (!target)
 			break;
-		
+
 		if (target && !isImage)
 			links.add(target);
 	}
-	
+
 	var fileNames = new Set();
 	while (links.length) {
 		var target = links.shift();
@@ -142,7 +143,7 @@ Page.prototype.getOutgoingLinks = Q.async(function*() {
 		else
 			fileNames.add(fileName);
 	}
-	
+
 	return fileNames.toArray();
 });
 
