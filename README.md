@@ -24,6 +24,7 @@ The paths are relative to the config file's directory. `template.tex` should be 
 * pandoc
 * rubber
 * inkscape (only if you include svg graphics)
+* latex packages referenced by the template (recommended: ubuntu packages `texlive-latex-recommended texlive-latex-full texlive-fonts-recommended texlive-lang-german`)
 
 ### Usage
 
