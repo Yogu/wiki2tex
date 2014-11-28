@@ -7,7 +7,7 @@ module.exports = Q.async(function*(latex, directory) {
 
 	console.log('Converting latex to pdf...');
 	yield fs.write(basePath + '.tex', latex);
-	yield exec("rubber --pdf " + escapeshell(basePath));
+	yield exec("rubber --pdf " + escapeshell(basePath), { cwd: directory });
 });
 
 function escapeshell(cmd) {
