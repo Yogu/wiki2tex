@@ -26,6 +26,9 @@ Page.postprocessLatex = function(text) {
 	// make images max. 100% width/height
 	text = text.replace(/\\includegraphics/g, '\\includegraphics[max width=\\linewidth,max totalheight=\\textheight]');
 
+	// fix quotation marks to tabel ones
+	text = text.replace(/''/g, "\"'").replace(/``/g, "\"`");
+
 	return text;
 };
 
