@@ -11,7 +11,7 @@ function Page(fileName) {
 }
 
 Page.preprocessMarkdown = function(text) {
-	text = text.replace(/<!--\s*BEGIN_NOT_IN_PDF\s*-->[\s\S]+?<!--\s*END_NOT_IN_PDF\s*-->/g, '');;
+	text = text.replace(/<!--\s*BEGIN_NOT_IN_PDF\s*-->[\s\S]+?<!--\s*END_NOT_IN_PDF\s*-->/g, '');
 	return text;
 };
 
@@ -52,12 +52,37 @@ Page.concatenateLatex = Q.async(function*(pages) {
 		var page = pages[i];
 		latex += (yield page.getFinalLatex()) + '\n\n';
 	}
+	latex = Page.postprocessCompleteLatex(latex);
 	return latex;
 });
 
+Page.postprocessCompleteLatex = function(latex) {
+	return latex.replace(/§BEGIN\\_TABLES\n([\s\S]+?)§END\\_TABLES/g,
+		function(match, content) { return Page.convertHeadingsToTables(content) });
+};
+
+Page.convertHeadingsToTables = function(latex) {
+	console.log('converting headings to tables...');
+	return latex.replace(/(\\subsection\{[\s\S]+?\}\n)([\s\S]+?)(?=\\(sub?)section.*\n)/g,
+		function(match, prefix, content) {
+			return prefix + Page.convertHeadingsToTable(content);
+		});
+};
+
+Page.convertHeadingsToTable = function(latex) {
+	var prefix = "\\begin{longtable}{|p{\\dimexpr 0.25\\linewidth-2\\tabcolsep}" +
+		"|p{\\dimexpr 0.75\\linewidth-2\\tabcolsep}|} \\hline\n";
+	var suffix = "\\end{longtable}\n";
+	var content = latex.replace(/\\subsubsection\{([\s\S]+?)\}.*\n([\s\S]+?)(?=$|(\\((sub)*section)))/g,
+		function(match, heading, content) {
+			return heading + " & " + content + " \\\\ \\hline\n";
+		});
+	return prefix + content + suffix;
+};
+
 Page.prototype.getPageName = function() {
 	return fs.base(this.fileName, fs.extension(this.fileName));
-}
+};
 
 Page.getRealFileName = Q.async(function*(target, base) {
 	var extensions = ['', '.md', '.markdown', '.txt'];
