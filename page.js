@@ -63,7 +63,7 @@ Page.postprocessCompleteLatex = function(latex) {
 
 Page.convertHeadingsToTables = function(latex) {
 	console.log('converting headings to tables...');
-	return latex.replace(/(\\subsection\{[\s\S]+?\}\n)([\s\S]+?)(?=\\(sub?)section.*\n)/g,
+	return latex.replace(/(\\subsection\{[\s\S]+?\}\n)([\s\S]+?)(?=$|(\\(sub?)section.*\n))/g,
 		function(match, prefix, content) {
 			return prefix + Page.convertHeadingsToTable(content);
 		});
